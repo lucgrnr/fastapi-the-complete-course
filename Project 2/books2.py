@@ -22,13 +22,13 @@ class Book:
         self.rating = rating
         self.published_date = published_date
 
-
+# Use this class for data validation
 class BookRequest(BaseModel):
-    id: Optional[int] = Field(description='ID is not needed on create', default=None)
+    id: Optional[int] = Field(description='ID is not needed on create', default=None) # find_book_id function will create the id
     title: str = Field(min_length=3)
     author: str = Field(min_length=1)
     description: str = Field(min_length=1, max_length=100)
-    rating: int = Field(gt=0, lt=6)
+    rating: int = Field(gt=0, lt=6) # greater than / less than
     published_date: int = Field(gt=1999, lt=2031)
 
     model_config = {
@@ -42,8 +42,25 @@ class BookRequest(BaseModel):
             }
         }
     }
-        
+     
+""""
+In FastAPI, validation is primarily handled by Pydantic models. 
+You define a Pydantic model with specific field constraints and then use that model as a type hint in your endpoint function parameters. 
+FastAPI will automatically parse the incoming request data and validate it against the Pydantic model.
 
+Understanding model_config
+model_config is a configuration dictionary that can be added to a Pydantic model to customize its behavior. Some common keys include:
+- allow_population_by_field_name: Allows field population by field name.
+- extra: Specifies how to handle extra fields (e.g., ignore, allow, or forbid).
+- validate_assignment: Enables or disables validation when setting fields.
+In your case, you're using json_schema_extra to add an example to the model's JSON schema.
+
+Why Use model_config with json_schema_extra?
+Improved Documentation: By providing an example payload, the API documentation becomes more user-friendly and informative. Users can see a sample of the expected JSON structure when interacting with the API.
+Validation Guidance: The example serves as a reference for the expected data format, guiding users on how to structure their requests correctly.
+Developer Convenience: Having a clear example reduces the likelihood of user errors when interacting with the API, as they can refer to the documentation for guidance.
+
+"""
 
 
 BOOKS = [
@@ -89,10 +106,15 @@ async def read_books_by_publish_date(published_date: int = Query(gt=1999, lt=203
 
 
 @app.post("/create-book", status_code=status.HTTP_201_CREATED)
-async def create_book(book_request: BookRequest):
-    new_book = Book(**book_request.model_dump())
+async def create_book(book_request: BookRequest): # must be of type BookRequest
+    new_book = Book(**book_request.model_dump()) # transform into Book object
     BOOKS.append(find_book_id(new_book))
-
+"""
+book_request.model_dump(): This method converts the validated Pydantic model instance into a dictionary.
+Book(**book_request.model_dump()): This creates a new Book instance by unpacking the dictionary into the Book constructor.
+find_book_id(new_book): This function assigns a unique ID to the new book. If the BOOKS list is empty, the ID is set to 1. Otherwise, the ID is set to one more than the last book's ID in the list.
+BOOKS.append(find_book_id(new_book)): The new book is added to the BOOKS list.
+"""
 
 def find_book_id(book: Book):
     book.id = 1 if len(BOOKS) == 0 else BOOKS[-1].id + 1
