@@ -1,8 +1,8 @@
 from typing import Optional
 from fastapi import FastAPI, Path, Query, HTTPException, Body
 from pydantic import BaseModel, Field
-from starlette import status
-
+from starlette import status # starlette installed automatically with FastAPI
+# important imports!
 app = FastAPI()
 
 
@@ -79,21 +79,66 @@ async def read_all_books():
 
 
 @app.get("/books/{book_id}", status_code=status.HTTP_200_OK)
-async def read_book(book_id: int = Path(gt=0)):
+async def read_book(book_id: int = Path(gt=0)): # Path is used to validate Path parameters
     for book in BOOKS:
         if book.id == book_id:
             return book
     raise HTTPException(status_code=404, detail='Item not found')
 
+"""
+These two endpoints do not interfere with each other because FastAPI (built on Starlette) evaluates routing path structure and trailing slashes distinctly, separating path parameters from query parameters.
+
+1. Explicit Trailing Slash vs. Exact Segment Path
+@app.get("/books/{book_id}"): Matches paths with two path segments (e.g., /books/1, /books/42).
+@app.get("/books/"): Matches the base collection path with a trailing slash (e.g., /books/).
+
+2. Path Parameter vs. Query Parameter Handling
+In read_book, book_id is defined as a Path parameter (/books/{book_id}). When a request comes to /books/15, FastAPI routes 15 as book_id.
+In read_book_by_rating, book_rating is a Query parameter (book_rating: int = Query(...)). The URL path remains strictly /books/, and the parameter is passed via the query string:
+GET /books/?book_rating=5
+"""
 
 @app.get("/books/", status_code=status.HTTP_200_OK)
-async def read_book_by_rating(book_rating: int = Query(gt=0, lt=6)):
+async def read_book_by_rating(book_rating: int = Query(gt=0, lt=6)): # Query is used to validate Query parameters
     books_to_return = []
     for book in BOOKS:
         if book.rating == book_rating:
             books_to_return.append(book)
     return books_to_return
 
+"""
+While using a BookRequest class can encapsulate validation logic, 
+it is not always necessary or practical to define a separate class for each endpoint's parameters. 
+The Query decorator in FastAPI provides a convenient way to validate and parse query parameters directly within the function signature.
+
+Using a class for validation would lead to much longer code:
+class BookRequest:
+    def __init__(self, book_rating: int):
+        self.book_rating = book_rating
+
+    @property
+    def book_rating(self):
+        return self._book_rating
+
+    @book_rating.setter
+    def book_rating(self, value):
+        if not (0 < value < 6):
+            raise ValueError("Book rating must be between 1 and 5")
+        self._book_rating = value
+
+@app.get("/books/", status_code=status.HTTP_200_OK)
+async def read_book_by_rating(book_rating: int):
+    try:
+        book_request = BookRequest(book_rating)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    books_to_return = []
+    for book in BOOKS:
+        if book["rating"] == book_request.book_rating:
+            books_to_return.append(book)
+    return books_to_return
+"""
 
 
 @app.get("/books/publish/", status_code=status.HTTP_200_OK)
@@ -128,9 +173,9 @@ async def update_book(book: BookRequest):
         if BOOKS[i].id == book.id:
             BOOKS[i] = book
             book_changed = True
-    if not book_changed:
+    if not book_changed: # without this, the app could return code 200 even if it doesn't do anything
         raise HTTPException(status_code=404, detail='Item not found')
-
+# note: no response Body for a 204
 
 @app.delete("/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(book_id: int = Path(gt=0)):
