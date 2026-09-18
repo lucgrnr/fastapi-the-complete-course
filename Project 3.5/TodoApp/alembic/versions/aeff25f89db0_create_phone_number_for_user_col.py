@@ -24,3 +24,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column('users', 'phone_number')
+    # Only if you want to revert the upgrade

@@ -14,6 +14,8 @@ class Users(Base):
     is_active = Column(Boolean, default=True)
     role = Column(String)
     phone_number = Column(String)
+    # Simply adding a variable does not update an existing database
+    # Need to create an alembic revision + run the migration
 
 
 class Todos(Base):
