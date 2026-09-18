@@ -5,11 +5,14 @@ from fastapi import APIRouter, Depends, HTTPException, Path
 from starlette import status
 from models import Todos
 from database import SessionLocal
-from .auth import get_current_user
+from .auth import get_current_user # important
 
 router = APIRouter()
 
+# CRUD on database
 
+# Open a databse connection only while using it, then close it afterwards
+# for every request from the FastAPI application
 def get_db():
     db = SessionLocal()
     try:
@@ -17,7 +20,7 @@ def get_db():
     finally:
         db.close()
 
-
+# Dependency injection
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
@@ -27,7 +30,7 @@ class TodoRequest(BaseModel):
     description: str = Field(min_length=3, max_length=100)
     priority: int = Field(gt=0, lt=6)
     complete: bool
-
+    # ID is not passed into the request: user does not know the ID or how to increment it
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def read_all(user: user_dependency, db: db_dependency):
@@ -40,9 +43,9 @@ async def read_all(user: user_dependency, db: db_dependency):
 async def read_todo(user: user_dependency, db: db_dependency, todo_id: int = Path(gt=0)):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
-
+    # Use a SQL request
     todo_model = db.query(Todos).filter(Todos.id == todo_id)\
-        .filter(Todos.owner_id == user.get('id')).first()
+        .filter(Todos.owner_id == user.get('id')).first() # use first because ID is unique: no need to check all IDs
     if todo_model is not None:
         return todo_model
     raise HTTPException(status_code=404, detail='Todo not found.')
@@ -54,7 +57,7 @@ async def create_todo(user: user_dependency, db: db_dependency,
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
     todo_model = Todos(**todo_request.model_dump(), owner_id=user.get('id'))
-
+    # combines information from todo_request and owner_id
     db.add(todo_model)
     db.commit()
 
@@ -70,7 +73,7 @@ async def update_todo(user: user_dependency, db: db_dependency,
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is None:
         raise HTTPException(status_code=404, detail='Todo not found.')
-
+    # todo_model is retrieved from the database, then updated
     todo_model.title = todo_request.title
     todo_model.description = todo_request.description
     todo_model.priority = todo_request.priority
@@ -89,8 +92,8 @@ async def delete_todo(user: user_dependency, db: db_dependency, todo_id: int = P
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is None:
         raise HTTPException(status_code=404, detail='Todo not found.')
-    db.query(Todos).filter(Todos.id == todo_id).filter(Todos.owner_id == user.get('id')).delete()
 
+    db.query(Todos).filter(Todos.id == todo_id).filter(Todos.owner_id == user.get('id')).delete()
     db.commit()
 
 

@@ -1,5 +1,6 @@
 from database import Base
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+# columns types
 
 
 class Users(Base):
@@ -10,12 +11,12 @@ class Users(Base):
     username = Column(String, unique=True)
     first_name = Column(String)
     last_name = Column(String)
-    hashed_password = Column(String)
+    hashed_password = Column(String) # cannot dehash, but same password leads to same hash, so we can check for matching passwords
     is_active = Column(Boolean, default=True)
-    role = Column(String)
+    role = Column(String) # useful to allow admins to access information
 
 
-class Todos(Base):
+class Todos(Base): # inherits Base from database.py
     __tablename__ = 'todos'
 
     id = Column(Integer, primary_key=True, index=True)
@@ -24,3 +25,4 @@ class Todos(Base):
     priority = Column(Integer)
     complete = Column(Boolean, default=False)
     owner_id = Column(Integer, ForeignKey("users.id"))
+    # last line to match users with their todo items
