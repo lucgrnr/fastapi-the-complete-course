@@ -5,22 +5,25 @@ from .routers import auth, todos, admin, users
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 
+#from fastapi.templating import Jinja2Templates # added
+
 app = FastAPI()
+
+#templates = Jinja2Templates(directory="TodoApp/templates") # added
 
 Base.metadata.create_all(bind=engine)
 
+# Mount the static files directory 
 app.mount("/static", StaticFiles(directory="TodoApp/static"), name="static")
 
-
 @app.get("/")
-def test(request: Request):
+def test(request: Request): # formatting to have the proper response
+    #return templates.TemplateResponse(request=request, name="home.html") # if we want to redirect to a home page
     return RedirectResponse(url="/todos/todo-page", status_code=status.HTTP_302_FOUND)
-
 
 @app.get("/healthy")
 def health_check():
     return {'status': 'Healthy'}
-
 
 app.include_router(auth.router)
 app.include_router(todos.router)
