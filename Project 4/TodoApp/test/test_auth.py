@@ -26,18 +26,18 @@ def test_create_access_token():
     user_id = 1
     role = 'user'
     expires_delta = timedelta(days=1)
-
+    # Create a token
     token = create_access_token(username, user_id, role, expires_delta)
-
+    # Then immediately decode
     decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM],
                                options={'verify_signature': False})
-
+    # To check that the token contains the expected information
     assert decoded_token['sub'] == username
     assert decoded_token['id'] == user_id
     assert decoded_token['role'] == role
 
-
-@pytest.mark.asyncio
+# The function to test is different, because it is async with a try/except
+@pytest.mark.asyncio # by default, pytest can't test async functions (skipped), so we use this decorator
 async def test_get_current_user_valid_token():
     encode = {'sub': 'testuser', 'id': 1, 'role': 'admin'}
     token = jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -57,7 +57,10 @@ async def test_get_current_user_missing_payload():
     assert excinfo.value.status_code == 401
     assert excinfo.value.detail == 'Could not validate user.'
 
-
+# The test function test_get_current_user_missing_payload is designed to verify that the get_current_user function correctly handles cases where the JWT token is missing or invalid. 
+# By using the @pytest.mark.asyncio decorator and the pytest.raises context manager, 
+# the test ensures that the function raises the appropriate HTTPException with the correct status code and detail message. 
+# This helps in validating the behavior of the function under error conditions.
 
 
 

@@ -44,7 +44,7 @@ class Student:
         self.years = years
 
 
-@pytest.fixture
+@pytest.fixture # for reusability, simpler code
 def default_employee():
     return Student('John', 'Doe', 'Computer Science', 3)
 

@@ -6,6 +6,7 @@ from starlette import status
 from ..models import Todos
 from ..database import SessionLocal
 from .auth import get_current_user
+# use '..' because we need to exit the "routers" folder
 
 router = APIRouter()
 

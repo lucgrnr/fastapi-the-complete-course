@@ -7,6 +7,7 @@ from ..models import Users
 from ..database import SessionLocal
 from .auth import get_current_user
 from passlib.context import CryptContext
+# use '..' because we need to exit the "routers" folder
 
 router = APIRouter(
     prefix='/user',
